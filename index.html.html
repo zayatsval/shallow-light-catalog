@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shallow Light / Valhare — Catalog</title>
+</head>
+<body style="margin:0;background:#0A1F2B;">
+<style>
+  :root{
+    --ink:#0A1F2B;
+    --panel:#0F2B38;
+    --panel-2:#153B4A;
+    --line:rgba(232,225,201,0.14);
+    --gold:#E3B23C;
+    --gold-dim:#8A712C;
+    --seafoam:#6FA8A0;
+    --sand:#EDE6D2;
+    --sand-dim:#9CB0B5;
+    --danger:#C0654A;
+    --radius:14px;
+    font-family:'IBM Plex Sans',Arial,sans-serif;
+  }
+  #slcat *{box-sizing:border-box;}
+  #slcat{
+    background:radial-gradient(120% 140% at 15% -10%, #143B49 0%, var(--ink) 55%);
+    color:var(--sand);
+    min-height:100%;
+    padding:0;
+    border-radius:18px;
+    overflow:hidden;
+    border:1px solid var(--line);
+  }
+  #slcat .wrap{max-width:760px;margin:0 auto;padding:28px 22px 40px;}
+  #slcat h1,#slcat h2,#slcat h3{font-family:'Fraunces',Georgia,serif;font-weight:600;margin:0;color:var(--sand);}
+  #slcat .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--seafoam);margin-bottom:6px;display:block;
+  }
+
+  #slcat .header{padding-top:6px;position:relative;}
+  #slcat .shoreline{width:100%;height:46px;display:block;margin:14px 0 20px;}
+  #slcat .shoreline path{stroke:var(--gold);stroke-width:1.4;fill:none;opacity:.65;}
+  #slcat .shoreline path.b{stroke:var(--seafoam);opacity:.35;}
+  #slcat h1{font-size:26px;letter-spacing:.01em;}
+  #slcat .tagline{color:var(--sand-dim);font-size:13.5px;margin-top:6px;max-width:46ch;line-height:1.5;}
+
+  #slcat .tabs{display:flex;gap:6px;margin:26px 0 22px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+  #slcat .tab{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+    padding:10px 4px 12px;color:var(--sand-dim);background:none;border:none;cursor:pointer;
+    position:relative;
+  }
+  #slcat .tab.active{color:var(--gold);}
+  #slcat .tab.active::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--gold);}
+  #slcat .tab-count{color:var(--seafoam);}
+
+  #slcat .toolbar{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+  #slcat .search{
+    flex:1;min-width:160px;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:10px 12px;color:var(--sand);font-size:13.5px;
+  }
+  #slcat .search::placeholder{color:var(--sand-dim);}
+  #slcat .new-btn{
+    background:var(--gold);color:#1B1204;border:none;border-radius:10px;padding:10px 16px;
+    font-weight:600;font-size:13.5px;cursor:pointer;white-space:nowrap;
+  }
+  #slcat .new-btn:hover{background:#EFC15A;}
+  #slcat .empty{
+    text-align:center;padding:60px 20px;color:var(--sand-dim);border:1px dashed var(--line);border-radius:var(--radius);
+  }
+  #slcat .empty .big{font-family:'Fraunces',serif;font-size:19px;color:var(--sand);margin-bottom:8px;}
+  #slcat .grid{display:grid;gap:12px;}
+  #slcat .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 14px;
+    cursor:pointer;transition:border-color .15s;
+  }
+  #slcat .card:hover{border-color:var(--gold-dim);}
+  #slcat .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  #slcat .card-title{font-family:'Fraunces',serif;font-size:17px;color:var(--sand);}
+  #slcat .card-sub{font-size:12px;color:var(--sand-dim);margin-top:3px;}
+  #slcat .badges{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;}
+  #slcat .badge{
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.03em;padding:4px 8px;border-radius:20px;
+    border:1px solid var(--line);color:var(--sand-dim);
+  }
+  #slcat .badge.gold{color:var(--gold);border-color:rgba(227,178,60,.4);}
+  #slcat .badge.foam{color:var(--seafoam);border-color:rgba(111,168,160,.4);}
+  #slcat .badge.dim{opacity:.6;}
+  #slcat .card-codes{margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--sand-dim);}
+  #slcat .del-btn{
+    background:none;border:none;color:var(--sand-dim);font-size:16px;cursor:pointer;padding:2px 4px;line-height:1;
+  }
+  #slcat .del-btn:hover{color:var(--danger);}
+
+  /* ---- stats bar ---- */
+  #slcat .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+  #slcat .stat{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 12px;text-align:left;
+  }
+  #slcat .stat .num{font-family:'Fraunces',serif;font-size:24px;color:var(--gold);line-height:1;}
+  #slcat .stat .lbl{font-size:10.5px;color:var(--sand-dim);text-transform:uppercase;letter-spacing:.05em;margin-top:6px;}
+  @media (max-width:480px){ #slcat .stats{grid-template-columns:repeat(2,1fr);} }
+
+  /* ---- view toggle ---- */
+  #slcat .view-toggle{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;flex-shrink:0;}
+  #slcat .view-toggle button{
+    background:none;border:none;color:var(--sand-dim);padding:9px 12px;cursor:pointer;font-size:14px;line-height:1;
+  }
+  #slcat .view-toggle button.active{background:var(--panel-2);color:var(--gold);}
+
+  /* ---- compact list rows ---- */
+  #slcat .rows{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+  #slcat .rowitem{
+    display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--panel);
+    border-bottom:1px solid var(--line);cursor:pointer;
+  }
+  #slcat .rowitem:last-child{border-bottom:none;}
+  #slcat .rowitem:hover{background:var(--panel-2);}
+  #slcat .rowitem .rt-title{font-family:'Fraunces',serif;font-size:14.5px;color:var(--sand);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #slcat .rowitem .rt-proj{font-size:11px;color:var(--sand-dim);width:150px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #slcat .rowitem .rt-badges{display:flex;gap:5px;flex-shrink:0;}
+  #slcat .rowitem .rt-badges .badge{display:none;}
+  @media (min-width:560px){ #slcat .rowitem .rt-badges .badge{display:inline-block;} }
+  #slcat .rowitem .del-btn{flex-shrink:0;}
+
+  #slcat .progress{display:flex;align-items:center;gap:4px;margin-bottom:26px;}
+  #slcat .p-dot{
+    width:9px;height:9px;border-radius:50%;background:var(--panel-2);border:1px solid var(--line);flex-shrink:0;
+    transition:background .2s;
+  }
+  #slcat .p-dot.done{background:var(--gold);border-color:var(--gold);}
+  #slcat .p-dot.now{background:var(--seafoam);border-color:var(--seafoam);}
+  #slcat .p-line{flex:1;height:1px;background:var(--line);}
+  #slcat .p-line.done{background:var(--gold-dim);}
+
+  #slcat .step-label{margin-bottom:22px;}
+  #slcat .step-label .num{font-family:'IBM Plex Mono',monospace;color:var(--seafoam);font-size:12px;}
+  #slcat .step-label h2{font-size:21px;margin-top:4px;}
+  #slcat .step-label p{color:var(--sand-dim);font-size:13.5px;margin-top:6px;line-height:1.5;}
+
+  #slcat .field{margin-bottom:18px;}
+  #slcat .field label{display:block;font-size:12.5px;color:var(--sand-dim);margin-bottom:6px;letter-spacing:.02em;}
+  #slcat .field .req{color:var(--gold);}
+  #slcat .field input[type=text],
+  #slcat .field input[type=number],
+  #slcat .field input[type=date],
+  #slcat .field input[type=email],
+  #slcat .field select,
+  #slcat .field textarea{
+    width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:12px 13px;color:var(--sand);font-size:15px;font-family:inherit;
+  }
+  #slcat .field input:focus,#slcat .field select:focus,#slcat .field textarea:focus{
+    outline:none;border-color:var(--gold);
+  }
+  #slcat .field textarea{min-height:90px;resize:vertical;}
+  #slcat .field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%239CB0B5' stroke-width='1.6' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
+  #slcat .hint{font-size:11.5px;color:var(--sand-dim);margin-top:6px;line-height:1.5;opacity:.85;}
+
+  #slcat .nav{display:flex;justify-content:space-between;gap:10px;margin-top:8px;padding-top:18px;border-top:1px solid var(--line);}
+  #slcat .btn{
+    border-radius:10px;padding:12px 18px;font-size:14px;font-weight:600;cursor:pointer;border:1px solid var(--line);
+    background:none;color:var(--sand);
+  }
+  #slcat .btn.primary{background:var(--gold);color:#1B1204;border-color:var(--gold);}
+  #slcat .btn.primary:hover{background:#EFC15A;}
+  #slcat .btn.ghost:hover{border-color:var(--gold-dim);}
+  #slcat .btn[disabled]{opacity:.35;cursor:default;}
+
+  #slcat .review-group{margin-bottom:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;}
+  #slcat .review-group h4{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--seafoam);margin-bottom:10px;}
+  #slcat .review-row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;font-size:13.5px;border-bottom:1px dashed rgba(232,225,201,0.08);}
+  #slcat .review-row:last-child{border-bottom:none;}
+  #slcat .review-row .k{color:var(--sand-dim);}
+  #slcat .review-row .v{color:var(--sand);text-align:right;}
+
+  #slcat .profile-section{margin-bottom:24px;}
+  #slcat .profile-section h3{font-size:13px;font-family:'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--seafoam);margin-bottom:16px;}
+
+  #slcat .toast{
+    position:fixed;left:50%;bottom:22px;transform:translateX(-50%);
+    background:var(--gold);color:#1B1204;padding:10px 20px;border-radius:30px;font-size:13px;font-weight:600;
+    opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;z-index:50;
+  }
+  #slcat .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+  #slcat .toast.err{background:var(--danger);color:#fff;}
+
+  @media (max-width:480px){
+    #slcat .wrap{padding:20px 14px 32px;}
+    #slcat h1{font-size:22px;}
+    #slcat .review-row{flex-direction:column;gap:2px;}
+    #slcat .review-row .v{text-align:left;}
+  }
+</style>
+
+<div id="slcat">
+  <div class="wrap">
+    <div class="header">
+      <span class="eyebrow">MAIV Group · Shallow Light / Valhare</span>
+      <h1>Catalog & Registration Log</h1>
+      <svg class="shoreline" viewBox="0 0 700 46" preserveAspectRatio="none">
+        <path class="b" d="M0 30 Q 60 10 120 28 T 240 26 T 360 30 T 480 24 T 600 30 T 700 26"/>
+        <path d="M0 36 Q 70 20 140 34 T 280 32 T 420 36 T 560 30 T 700 34"/>
+      </svg>
+      <p class="tagline">One place to walk a track from Suno idea to DistroKid release to a filed BMI registration — then keep the receipts.</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab" data-tab="catalog">Catalog <span class="tab-count" id="tabCount"></span></button>
+      <button class="tab" data-tab="wizard">New Entry</button>
+      <button class="tab" data-tab="profile">Artist Profile</button>
+    </div>
+
+    <div id="viewCatalog"></div>
+    <div id="viewWizard" style="display:none;"></div>
+    <div id="viewProfile" style="display:none;"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const linkGF = document.createElement('link');
+  linkGF.rel='stylesheet';
+  linkGF.href='https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap';
+  document.head.appendChild(linkGF);
+
+  const STEPS = [
+    { title:'Track & Project', subtitle:'The basics — what this is, and which direction it belongs to.',
+      fields:[
+        {key:'title', label:'Track Title', type:'text', required:true, placeholder:'e.g. Zara Zota'},
+        {key:'project', label:'Project / Direction', type:'select', options:['Shallow Light','Valhare (as Shallow Light)','Russian rock-blues (Pepel I)','Other'], default:'Shallow Light'},
+        {key:'artist', label:'Artist Name (as released)', type:'text', default:'Shallow Light'},
+        {key:'language', label:'Language', type:'select', options:['English','Ukrainian','Russian','Italian','Bilingual','Invented Language','Instrumental'], default:'English'},
+        {key:'workContent', label:'Work Content', type:'select', options:['Music and Lyrics','Instrumental'], default:'Music and Lyrics'},
+      ]},
+    { title:'Authorship', subtitle:'How BMI should credit the work.',
+      fields:[
+        {key:'role', label:'Writer Role', type:'select', options:['Author','Composer','Composer/Author'], default:'Composer/Author',
+          hint:'Only the text is yours → Author. Only the music → Composer. Both, or you shaped the final Suno composition → Composer/Author (also required if BMI blocks "Author" alone on a Music & Lyrics work).'},
+        {key:'writerShare', label:'Writer Share %', type:'number', default:200, hint:'200% is standard when there is no publisher on the work.'},
+        {key:'publisher', label:'Publisher on this work?', type:'select', options:['No','Yes'], default:'No'},
+        {key:'aiInvolvement', label:'AI involvement', type:'select',
+          options:['Music generated with AI (Suno), lyrics human-written','None — fully human-composed','Fully AI-generated (not independently BMI-registrable)'],
+          default:'Music generated with AI (Suno), lyrics human-written'},
+      ]},
+    { title:'Recording & Distribution', subtitle:'Where this lives on DistroKid and the stores.',
+      fields:[
+        {key:'uploadDate', label:'DistroKid Upload Date', type:'date'},
+        {key:'releaseDate', label:'Release Date', type:'date'},
+        {key:'dkStatus', label:'DistroKid Status', type:'select', options:['Not uploaded','In Review','Delivered','Live','Takedown'], default:'Delivered'},
+        {key:'isrc', label:'ISRC', type:'text', placeholder:'e.g. QZNWX2500001'},
+        {key:'upc', label:'UPC', type:'text', placeholder:'e.g. 825626971400'},
+        {key:'catalogNum', label:'Catalog #', type:'text', hint:'Usually the same as UPC.'},
+        {key:'label', label:'Record Label', type:'text', default:'12274040 Records DK'},
+      ]},
+    { title:'BMI Registration', subtitle:'Track the paperwork once it is filed.',
+      fields:[
+        {key:'bmiDate', label:'BMI Registration Date', type:'date'},
+        {key:'bmiStatus', label:'BMI Status', type:'select', options:['Not yet registered','Submitted','Successfully Registered','Under Review','Rejected'], default:'Not yet registered'},
+        {key:'bmiWorkNo', label:'BMI Work No.', type:'text', placeholder:'e.g. 081052867'},
+      ]},
+    { title:'Notes & Review', subtitle:'Anything worth remembering, then save it to the catalog.', review:true,
+      fields:[
+        {key:'notes', label:'Notes', type:'textarea', placeholder:'Mix decisions, SubmitHub score, anything future-you should know.'}
+      ]},
+  ];
+
+  const PROFILE_SECTIONS = [
+    { title:'Writer & BMI', fields:[
+      {key:'legalName', label:'Legal Writer Name (BMI)', type:'text', default:'VALERII ZAIATS'},
+      {key:'performingArtist', label:'Performing Artist Name(s)', type:'text', default:'Shallow Light', hint:'Valhare tracks are released under this same name.'},
+      {key:'ipi', label:'BMI IPI Number', type:'text', default:'01358542725'},
+      {key:'bmiUsername', label:'BMI Username / Login Email', type:'text', placeholder:'shallowlightmusic@…'},
+      {key:'bmiMfa', label:'BMI MFA Method', type:'select', options:['Google Authenticator','Microsoft Authenticator','Authy','SMS/Text Message'], default:'Google Authenticator'},
+      {key:'bmiPublisherStatus', label:'BMI Publisher Status', type:'select', options:['Not registered (writer only)','Registered as self-publisher'], default:'Not registered (writer only)'},
+    ]},
+    { title:'Distribution Defaults', fields:[
+      {key:'distroLabel', label:'DistroKid Label Name', type:'text', default:'12274040 Records DK'},
+    ]},
+    { title:'Business', fields:[
+      {key:'entity', label:'Legal Entity', type:'text', default:'MAIV Group LLC'},
+      {key:'location', label:'Location', type:'text', default:'Sarasota, FL'},
+    ]},
+    { title:'Notes', fields:[
+      {key:'profileNotes', label:'Notes', type:'textarea', placeholder:'Anything else worth keeping close — renewal dates, agreement terms, reminders.'}
+    ]},
+  ];
+
+  // ===== CONFIG =====
+  // Paste your Google Apps Script Web App URL here after deploying (ends in /exec)
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbyzyiDtcT525nRvMXZ_HBg38uAcp0MzsjOPW91ozMnImpgJ-luMRRDb0A8dT7VtZzo/exec";
+
+  let tracks = [];
+  let profile = {};
+  let curStep = 0;
+  let form = {};
+  let editingId = null;
+  let catalogViewMode = 'list'; // 'list' (compact) or 'grid' (cards)
+
+  const viewCatalog = document.getElementById('viewCatalog');
+  const viewWizard = document.getElementById('viewWizard');
+  const viewProfile = document.getElementById('viewProfile');
+  const tabCount = document.getElementById('tabCount');
+  const toastEl = document.getElementById('toast');
+
+  function toast(msg, isErr){
+    toastEl.textContent = msg;
+    toastEl.classList.toggle('err', !!isErr);
+    toastEl.classList.add('show');
+    setTimeout(()=>toastEl.classList.remove('show'), 2200);
+  }
+
+  function uid(){ return 't' + Date.now() + Math.random().toString(36).slice(2,8); }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function hasStorage(){ return GAS_URL && GAS_URL.indexOf('PASTE_YOUR') === -1; }
+
+  // ---------- persistence (Google Sheets via Apps Script) ----------
+  // in-memory `tracks`/`profile` are always the source of truth for rendering,
+  // so the UI never silently fails to save even if the network call has trouble.
+  async function loadAll(){
+    if(!hasStorage()){
+      toast('Add your Apps Script URL in the code to enable saving', true);
+      return;
+    }
+    try{
+      const [tRes, pRes] = await Promise.all([
+        fetch(GAS_URL + '?action=list').then(r=>r.json()),
+        fetch(GAS_URL + '?action=profile').then(r=>r.json())
+      ]);
+      tracks = Array.isArray(tRes) ? tRes : [];
+      profile = pRes || {};
+    }catch(e){ console.warn('Load failed', e); toast('Could not load from Google Sheets', true); }
+    tracks.sort((a,b)=> (b.updatedAt||0) - (a.updatedAt||0));
+  }
+
+  async function persistTrack(data){
+    if(!hasStorage()) return;
+    try{
+      await fetch(GAS_URL, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({action:'save', data})
+      });
+    }catch(e){ console.warn('Track persist failed', e); toast('Saved here, but sync to Sheets failed', true); }
+  }
+
+  async function persistDelete(id){
+    if(!hasStorage()) return;
+    try{
+      await fetch(GAS_URL, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({action:'delete', id})
+      });
+    }catch(e){ console.warn('Track delete-persist failed', e); }
+  }
+
+  async function persistProfile(data){
+    if(!hasStorage()) return;
+    try{
+      await fetch(GAS_URL, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({action:'saveProfile', data})
+      });
+    }catch(e){ console.warn('Profile persist failed', e); toast('Saved here, but sync to Sheets failed', true); }
+  }
+
+  function setTab(name){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+    viewCatalog.style.display = name==='catalog' ? 'block' : 'none';
+    viewWizard.style.display = name==='wizard' ? 'block' : 'none';
+    viewProfile.style.display = name==='profile' ? 'block' : 'none';
+    if(name==='catalog') renderCatalog();
+    if(name==='profile') renderProfile();
+  }
+
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      if(t.dataset.tab==='wizard' && editingId===null){ startNew(); }
+      setTab(t.dataset.tab);
+    });
+  });
+
+  function badgeClass(status){
+    if(!status) return 'dim';
+    if(status.includes('Successfully') || status==='Live') return 'gold';
+    if(status.includes('Submitted') || status==='Delivered' || status==='In Review' || status==='Under Review') return 'foam';
+    return 'dim';
+  }
+
+  // ---------- catalog stats ----------
+  function computeStats(){
+    const total = tracks.length;
+    const released = tracks.filter(t => t.dkStatus==='Live' || t.dkStatus==='Delivered').length;
+    const bmiRegistered = tracks.filter(t => (t.bmiStatus||'').includes('Successfully')).length;
+    const bmiPending = tracks.filter(t => !t.bmiStatus || t.bmiStatus==='Not yet registered' || t.bmiStatus==='Submitted' || t.bmiStatus==='Under Review').length;
+    return {total, released, bmiRegistered, bmiPending};
+  }
+
+  function statsHtml(){
+    const s = computeStats();
+    return `<div class="stats">
+      <div class="stat"><div class="num">${s.total}</div><div class="lbl">Tracks logged</div></div>
+      <div class="stat"><div class="num">${s.released}</div><div class="lbl">Released</div></div>
+      <div class="stat"><div class="num">${s.bmiRegistered}</div><div class="lbl">BMI registered</div></div>
+      <div class="stat"><div class="num">${s.bmiPending}</div><div class="lbl">Awaiting BMI</div></div>
+    </div>`;
+  }
+
+  // ---------- catalog ----------
+  function renderCatalog(){
+    tabCount.textContent = tracks.length ? `(${tracks.length})` : '';
+    if(tracks.length===0){
+      viewCatalog.innerHTML = `<div class="empty">
+        <div class="big">The catalog is quiet.</div>
+        Log your first track — start with one already on DistroKid or one still in FL Studio.
+        <div style="margin-top:18px;"><button class="new-btn" id="emptyNewBtn">+ New Entry</button></div>
+      </div>`;
+      document.getElementById('emptyNewBtn').addEventListener('click', ()=>{ startNew(); setTab('wizard'); });
+      return;
+    }
+    viewCatalog.innerHTML = `
+      ${statsHtml()}
+      <div class="toolbar">
+        <input class="search" id="searchBox" placeholder="Search by title or project…">
+        <div class="view-toggle">
+          <button data-view="list" title="Compact list">&#9776;</button>
+          <button data-view="grid" title="Cards">&#9638;</button>
+        </div>
+        <button class="new-btn" id="newBtn">+ New Entry</button>
+      </div>
+      <div id="listArea"></div>
+    `;
+    document.getElementById('newBtn').addEventListener('click', ()=>{ startNew(); setTab('wizard'); });
+    document.getElementById('searchBox').addEventListener('input', e=> renderList(e.target.value));
+    viewCatalog.querySelectorAll('.view-toggle button').forEach(b=>{
+      b.classList.toggle('active', b.dataset.view===catalogViewMode);
+      b.addEventListener('click', ()=>{
+        catalogViewMode = b.dataset.view;
+        viewCatalog.querySelectorAll('.view-toggle button').forEach(x=>x.classList.toggle('active', x.dataset.view===catalogViewMode));
+        renderList(document.getElementById('searchBox').value);
+      });
+    });
+    renderList('');
+  }
+
+  function renderList(filter){
+    const area = document.getElementById('listArea');
+    const f = (filter||'').toLowerCase();
+    const list = tracks.filter(t => !f || (t.title||'').toLowerCase().includes(f) || (t.project||'').toLowerCase().includes(f));
+    if(list.length===0){ area.innerHTML = `<div class="empty">No tracks match “${escapeHtml(filter)}”.</div>`; return; }
+    area.innerHTML = catalogViewMode==='grid' ? gridMarkup(list) : rowsMarkup(list);
+    area.querySelectorAll('[data-open]').forEach(c=>{
+      c.addEventListener('click', (e)=>{
+        if(e.target.closest('[data-del]')) return;
+        openTrack(c.dataset.open);
+      });
+    });
+    area.querySelectorAll('[data-del]').forEach(b=>{
+      b.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const id = b.dataset.del;
+        const t = tracks.find(x=>x.id===id);
+        if(confirm(`Delete "${t?t.title:'this track'}" from the catalog? This can't be undone.`)){
+          tracks = tracks.filter(x=>x.id!==id);
+          renderCatalog();
+          toast('Removed from catalog');
+          persistDelete(id);
+        }
+      });
+    });
+  }
+
+  function gridMarkup(list){
+    return `<div class="grid">` + list.map(t => `
+      <div class="card" data-open="${t.id}">
+        <div class="card-top">
+          <div>
+            <div class="card-title">${escapeHtml(t.title||'Untitled')}</div>
+            <div class="card-sub">${escapeHtml(t.project||'—')} · ${escapeHtml(t.artist||'—')}</div>
+          </div>
+          <button class="del-btn" data-del="${t.id}" title="Delete">✕</button>
+        </div>
+        <div class="badges">
+          <span class="badge ${badgeClass(t.dkStatus)}">${escapeHtml(t.dkStatus||'Not uploaded')}</span>
+          <span class="badge ${badgeClass(t.bmiStatus)}">${escapeHtml(t.bmiStatus||'Not yet registered')}</span>
+          ${t.bmiWorkNo ? `<span class="badge dim">#${escapeHtml(t.bmiWorkNo)}</span>` : ''}
+        </div>
+        ${(t.isrc||t.upc) ? `<div class="card-codes">${t.isrc?('ISRC '+escapeHtml(t.isrc)):''}${(t.isrc&&t.upc)?' · ':''}${t.upc?('UPC '+escapeHtml(t.upc)):''}</div>` : ''}
+      </div>
+    `).join('') + `</div>`;
+  }
+
+  function rowsMarkup(list){
+    return `<div class="rows">` + list.map(t => `
+      <div class="rowitem" data-open="${t.id}">
+        <div class="rt-title">${escapeHtml(t.title||'Untitled')}</div>
+        <div class="rt-proj">${escapeHtml(t.project||'—')}</div>
+        <div class="rt-badges">
+          <span class="badge ${badgeClass(t.dkStatus)}">${escapeHtml(t.dkStatus||'Not uploaded')}</span>
+          <span class="badge ${badgeClass(t.bmiStatus)}">${escapeHtml(t.bmiStatus||'Not yet registered')}</span>
+        </div>
+        <button class="del-btn" data-del="${t.id}" title="Delete">✕</button>
+      </div>
+    `).join('') + `</div>`;
+  }
+
+  // ---------- wizard ----------
+  function startNew(){
+    editingId = null;
+    form = {};
+    STEPS.forEach(s => s.fields.forEach(f => { if(f.default!==undefined) form[f.key]=f.default; }));
+    curStep = 0;
+    renderWizard();
+  }
+
+  function openTrack(id){
+    const t = tracks.find(x=>x.id===id);
+    if(!t) return;
+    editingId = id;
+    form = Object.assign({}, t);
+    curStep = 0;
+    setTab('wizard');
+    renderWizard();
+  }
+
+  function renderProgress(){
+    let html = '<div class="progress">';
+    STEPS.forEach((s,i)=>{
+      const cls = i<curStep ? 'done' : (i===curStep ? 'now' : '');
+      html += `<div class="p-dot ${cls}"></div>`;
+      if(i < STEPS.length-1) html += `<div class="p-line ${i<curStep?'done':''}"></div>`;
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function fieldHtml(f, data){
+    const val = data[f.key] !== undefined ? data[f.key] : '';
+    let input = '';
+    if(f.type==='select'){
+      input = `<select data-key="${f.key}">` + f.options.map(o=>`<option value="${escapeHtml(o)}" ${o===val?'selected':''}>${escapeHtml(o)}</option>`).join('') + `</select>`;
+    } else if(f.type==='textarea'){
+      input = `<textarea data-key="${f.key}" placeholder="${f.placeholder||''}">${escapeHtml(val)}</textarea>`;
+    } else {
+      input = `<input type="${f.type}" data-key="${f.key}" value="${escapeHtml(val)}" placeholder="${f.placeholder||''}">`;
+    }
+    return `<div class="field">
+      <label>${f.label}${f.required?' <span class="req">*</span>':''}</label>
+      ${input}
+      ${f.hint?`<div class="hint">${f.hint}</div>`:''}
+    </div>`;
+  }
+
+  function reviewHtml(){
+    const groups = STEPS.filter(s=>!s.review);
+    let html = '';
+    groups.forEach(g=>{
+      html += `<div class="review-group"><h4>${g.title}</h4>`;
+      g.fields.forEach(f=>{
+        const v = form[f.key];
+        html += `<div class="review-row"><span class="k">${f.label}</span><span class="v">${v ? escapeHtml(String(v)) : '—'}</span></div>`;
+      });
+      html += `</div>`;
+    });
+    return html;
+  }
+
+  function renderWizard(){
+    const step = STEPS[curStep];
+    let body = step.fields.map(f=>fieldHtml(f, form)).join('');
+    if(step.review){
+      body += `<div style="margin-top:22px;">` + reviewHtml() + `</div>`;
+    }
+    viewWizard.innerHTML = `
+      ${renderProgress()}
+      <div class="step-label">
+        <span class="num">STEP ${curStep+1} OF ${STEPS.length}</span>
+        <h2>${step.title}</h2>
+        <p>${step.subtitle}</p>
+      </div>
+      ${body}
+      <div class="nav">
+        <button class="btn ghost" id="backBtn" ${curStep===0?'disabled':''}>Back</button>
+        <button class="btn primary" id="nextBtn">${curStep===STEPS.length-1 ? (editingId? 'Save Changes':'Save to Catalog') : 'Continue'}</button>
+      </div>
+    `;
+    viewWizard.querySelectorAll('[data-key]').forEach(el=>{
+      el.addEventListener('input', ()=>{ form[el.dataset.key] = el.value; });
+    });
+    document.getElementById('backBtn').addEventListener('click', ()=>{
+      if(curStep>0){ curStep--; renderWizard(); }
+    });
+    document.getElementById('nextBtn').addEventListener('click', ()=>{
+      const reqField = step.fields.find(f=>f.required && !form[f.key]);
+      if(reqField){ toast(`${reqField.label} is required`, true); return; }
+      if(curStep < STEPS.length-1){ curStep++; renderWizard(); return; }
+
+      // final step: commit to in-memory catalog immediately, then sync to storage
+      const wasEditing = !!editingId;
+      const now = Date.now();
+      if(wasEditing){
+        form.id = editingId;
+        const idx = tracks.findIndex(t=>t.id===editingId);
+        form.updatedAt = now;
+        if(idx>=0){ tracks[idx] = Object.assign({}, tracks[idx], form); }
+        else { tracks.unshift(form); }
+      } else {
+        form.id = uid();
+        form.createdAt = now;
+        form.updatedAt = now;
+        tracks.unshift(form);
+      }
+      const saved = wasEditing ? tracks.find(t=>t.id===editingId) : form;
+      editingId = null;
+      toast(wasEditing ? 'Changes saved' : 'Added to catalog');
+      setTab('catalog');
+      persistTrack(saved);
+    });
+  }
+
+  // ---------- artist profile ----------
+  function renderProfile(){
+    let html = '';
+    PROFILE_SECTIONS.forEach(sec=>{
+      html += `<div class="profile-section"><h3>${sec.title}</h3>`;
+      sec.fields.forEach(f=>{
+        const data = Object.assign({}, {}, profile);
+        sec.fields.forEach(ff=>{ if(profile[ff.key]===undefined && ff.default!==undefined) data[ff.key]=ff.default; });
+        html += fieldHtml(f, data);
+      });
+      html += `</div>`;
+    });
+    html += `<div class="nav" style="justify-content:flex-end;border-top:none;padding-top:0;">
+      <button class="btn primary" id="saveProfileBtn">Save Profile</button>
+    </div>`;
+    viewProfile.innerHTML = html;
+
+    // seed defaults into `profile` object for fields never touched yet
+    PROFILE_SECTIONS.forEach(sec=>sec.fields.forEach(f=>{
+      if(profile[f.key]===undefined && f.default!==undefined) profile[f.key]=f.default;
+    }));
+
+    viewProfile.querySelectorAll('[data-key]').forEach(el=>{
+      el.addEventListener('input', ()=>{ profile[el.dataset.key] = el.value; });
+    });
+    document.getElementById('saveProfileBtn').addEventListener('click', ()=>{
+      toast('Profile saved');
+      persistProfile(profile);
+    });
+  }
+
+  (async function init(){
+    await loadAll();
+    setTab('catalog');
+  })();
+})();
+</script>
+
+</body>
+</html>
