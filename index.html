@@ -301,6 +301,7 @@
   // ===== CONFIG =====
   // Paste your Google Apps Script Web App URL here after deploying (ends in /exec)
   const GAS_URL = "https://script.google.com/macros/s/AKfycbyzyiDtcT525nRvMXZ_HBg38uAcp0MzsjOPW91ozMnImpgJ-luMRRDb0A8dT7VtZzo/exec";
+  const GAS_KEY = "HbrA8EwS6rw1NTyEKicwOQAn1Z2Tja6g";
 
   let tracks = [];
   let profile = {};
@@ -353,8 +354,8 @@
     }
     try{
       const [tRes, pRes] = await Promise.all([
-        fetch(GAS_URL + '?action=list').then(r=>r.json()),
-        fetch(GAS_URL + '?action=profile').then(r=>r.json())
+        fetch(GAS_URL + '?action=list&key=' + encodeURIComponent(GAS_KEY)).then(r=>r.json()),
+        fetch(GAS_URL + '?action=profile&key=' + encodeURIComponent(GAS_KEY)).then(r=>r.json())
       ]);
       tracks = Array.isArray(tRes) ? tRes : [];
       profile = pRes || {};
@@ -368,7 +369,7 @@
       await fetch(GAS_URL, {
         method:'POST',
         headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify({action:'save', data})
+        body: JSON.stringify({action:'save', data, key: GAS_KEY})
       });
     }catch(e){ console.warn('Track persist failed', e); toast('Saved here, but sync to Sheets failed', true); }
   }
@@ -379,7 +380,7 @@
       await fetch(GAS_URL, {
         method:'POST',
         headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify({action:'delete', id})
+        body: JSON.stringify({action:'delete', id, key: GAS_KEY})
       });
     }catch(e){ console.warn('Track delete-persist failed', e); }
   }
@@ -390,7 +391,7 @@
       await fetch(GAS_URL, {
         method:'POST',
         headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify({action:'saveProfile', data})
+        body: JSON.stringify({action:'saveProfile', data, key: GAS_KEY})
       });
     }catch(e){ console.warn('Profile persist failed', e); toast('Saved here, but sync to Sheets failed', true); }
   }
