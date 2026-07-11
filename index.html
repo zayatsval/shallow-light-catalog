@@ -215,6 +215,7 @@
 
     <div id="viewCatalog"></div>
     <div id="viewWizard" style="display:none;"></div>
+    <div id="viewDetail" style="display:none;"></div>
     <div id="viewProfile" style="display:none;"></div>
   </div>
 </div>
@@ -304,6 +305,7 @@
 
   const viewCatalog = document.getElementById('viewCatalog');
   const viewWizard = document.getElementById('viewWizard');
+  const viewDetail = document.getElementById('viewDetail');
   const viewProfile = document.getElementById('viewProfile');
   const tabCount = document.getElementById('tabCount');
   const toastEl = document.getElementById('toast');
@@ -377,6 +379,7 @@
     document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
     viewCatalog.style.display = name==='catalog' ? 'block' : 'none';
     viewWizard.style.display = name==='wizard' ? 'block' : 'none';
+    viewDetail.style.display = 'none';
     viewProfile.style.display = name==='profile' ? 'block' : 'none';
     if(name==='catalog') renderCatalog();
     if(name==='profile') renderProfile();
@@ -395,11 +398,13 @@
     if(status.includes('Submitted') || status==='Delivered' || status==='In Review' || status==='Under Review') return 'foam';
     return 'dim';
   }
-function ytBadge(t){
+
+  function ytBadge(t){
     if(t.ytVideo==='Yes') return `<span class="badge gold">🎬 Video</span>`;
     if(t.ytVideo==='In Progress') return `<span class="badge foam">🎬 In progress</span>`;
     return '';
-}
+  }
+
   // ---------- catalog stats ----------
   function computeStats(){
     const total = tracks.length;
@@ -529,6 +534,67 @@ function ytBadge(t){
   }
 
   function openTrack(id){
+    showDetail(id);
+  }
+
+  function showDetail(id){
+    const t = tracks.find(x=>x.id===id);
+    if(!t) return;
+    document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active', x.dataset.tab==='catalog'));
+    viewCatalog.style.display = 'none';
+    viewWizard.style.display = 'none';
+    viewProfile.style.display = 'none';
+    viewDetail.style.display = 'block';
+    renderDetail(t);
+  }
+
+  function reviewLikeHtml(data){
+    let html = '';
+    STEPS.forEach(g=>{
+      html += `<div class="review-group"><h4>${g.title}</h4>`;
+      g.fields.forEach(f=>{
+        const v = data[f.key];
+        html += `<div class="review-row"><span class="k">${f.label}</span><span class="v">${v ? escapeHtml(String(v)) : '—'}</span></div>`;
+      });
+      html += `</div>`;
+    });
+    return html;
+  }
+
+  function renderDetail(t){
+    viewDetail.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px;">
+        <div>
+          <span class="num" style="font-family:'IBM Plex Mono',monospace;color:var(--seafoam);font-size:12px;">${escapeHtml(t.project||'')}</span>
+          <h2 style="font-size:21px;margin-top:4px;">${escapeHtml(t.title||'Untitled')}</h2>
+        </div>
+        <button class="del-btn" id="detailDelBtn" title="Delete" style="font-size:20px;">✕</button>
+      </div>
+      <div class="badges" style="margin-bottom:22px;">
+        <span class="badge ${badgeClass(t.dkStatus)}">${escapeHtml(t.dkStatus||'Not uploaded')}</span>
+        <span class="badge ${badgeClass(t.bmiStatus)}">${escapeHtml(t.bmiStatus||'Not yet registered')}</span>
+        ${t.bmiWorkNo ? `<span class="badge dim">#${escapeHtml(t.bmiWorkNo)}</span>` : ''}
+        ${ytBadge(t)}
+      </div>
+      ${reviewLikeHtml(t)}
+      <div class="nav">
+        <button class="btn ghost" id="detailBackBtn">← Back to Catalog</button>
+        <button class="btn primary" id="detailEditBtn">Edit</button>
+      </div>
+    `;
+    document.getElementById('detailBackBtn').addEventListener('click', ()=>{ setTab('catalog'); });
+    document.getElementById('detailEditBtn').addEventListener('click', ()=>{ openTrackEdit(t.id); });
+    document.getElementById('detailDelBtn').addEventListener('click', ()=>{
+      if(confirm(`Delete "${t.title||'this track'}" from the catalog? This can't be undone.`)){
+        tracks = tracks.filter(x=>x.id!==t.id);
+        setTab('catalog');
+        toast('Removed from catalog');
+        persistDelete(t.id);
+      }
+    });
+  }
+
+  function openTrackEdit(id){
     const t = tracks.find(x=>x.id===id);
     if(!t) return;
     editingId = id;
