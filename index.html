@@ -105,6 +105,12 @@
 
   /* ---- view toggle ---- */
   #slcat .view-toggle{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;flex-shrink:0;}
+  #slcat .sort-select{
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--sand);
+    font-size:13px;font-family:inherit;padding:9px 30px 9px 12px;flex-shrink:0;appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%239CB0B5' stroke-width='1.6' fill='none'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 12px center;
+  }
   #slcat .view-toggle button{
     background:none;border:none;color:var(--sand-dim);padding:9px 12px;cursor:pointer;font-size:14px;line-height:1;
   }
@@ -302,6 +308,7 @@
   let form = {};
   let editingId = null;
   let catalogViewMode = 'list'; // 'list' (compact) or 'grid' (cards)
+  let catalogSortMode = 'newest'; // 'newest' | 'oldest' | 'title'
 
   const viewCatalog = document.getElementById('viewCatalog');
   const viewWizard = document.getElementById('viewWizard');
@@ -326,6 +333,13 @@
     const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);
     if(!m) return v;
     return `${m[2]}/${m[3]}/${m[1]}`;
+  }
+  function fmtTimestamp(ts){
+    if(!ts) return '';
+    const n = Number(ts);
+    if(!n) return '';
+    const d = new Date(n);
+    return `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}/${d.getFullYear()}`;
   }
   function hasStorage(){ return GAS_URL && GAS_URL.indexOf('PASTE_YOUR') === -1; }
 
@@ -446,6 +460,11 @@
       ${statsHtml()}
       <div class="toolbar">
         <input class="search" id="searchBox" placeholder="Search by title or project…">
+        <select class="sort-select" id="sortSelect">
+          <option value="newest">Newest added</option>
+          <option value="oldest">Oldest added</option>
+          <option value="title">Title A–Z</option>
+        </select>
         <div class="view-toggle">
           <button data-view="list" title="Compact list">&#9776;</button>
           <button data-view="grid" title="Cards">&#9638;</button>
@@ -456,6 +475,12 @@
     `;
     document.getElementById('newBtn').addEventListener('click', ()=>{ startNew(); setTab('wizard'); });
     document.getElementById('searchBox').addEventListener('input', e=> renderList(e.target.value));
+    const sortSel = document.getElementById('sortSelect');
+    sortSel.value = catalogSortMode;
+    sortSel.addEventListener('change', ()=>{
+      catalogSortMode = sortSel.value;
+      renderList(document.getElementById('searchBox').value);
+    });
     viewCatalog.querySelectorAll('.view-toggle button').forEach(b=>{
       b.classList.toggle('active', b.dataset.view===catalogViewMode);
       b.addEventListener('click', ()=>{
@@ -470,8 +495,12 @@
   function renderList(filter){
     const area = document.getElementById('listArea');
     const f = (filter||'').toLowerCase();
-    const list = tracks.filter(t => !f || (t.title||'').toLowerCase().includes(f) || (t.project||'').toLowerCase().includes(f));
-    if(list.length===0){ area.innerHTML = `<div class="empty">No tracks match “${escapeHtml(filter)}”.</div>`; return; }
+    let list = tracks.filter(t => !f || (t.title||'').toLowerCase().includes(f) || (t.project||'').toLowerCase().includes(f));
+    list = list.slice();
+    if(catalogSortMode==='newest') list.sort((a,b)=> (Number(b.createdAt)||0) - (Number(a.createdAt)||0));
+    else if(catalogSortMode==='oldest') list.sort((a,b)=> (Number(a.createdAt)||0) - (Number(b.createdAt)||0));
+    else if(catalogSortMode==='title') list.sort((a,b)=> (a.title||'').localeCompare(b.title||''));
+    if(list.length===0){ area.innerHTML = `<div class="empty">No tracks match "${escapeHtml(filter)}".</div>`; return; }
     area.innerHTML = catalogViewMode==='grid' ? gridMarkup(list) : rowsMarkup(list);
     area.querySelectorAll('[data-open]').forEach(c=>{
       c.addEventListener('click', (e)=>{
@@ -582,6 +611,9 @@
         <span class="badge ${badgeClass(t.bmiStatus)}">${escapeHtml(t.bmiStatus||'Not yet registered')}</span>
         ${t.bmiWorkNo ? `<span class="badge dim">#${escapeHtml(t.bmiWorkNo)}</span>` : ''}
         ${ytBadge(t)}
+      </div>
+      <div style="font-size:11.5px;color:var(--sand-dim);margin:-14px 0 22px;">
+        Added to catalog ${fmtTimestamp(t.createdAt) || '—'}${t.updatedAt && t.updatedAt!==t.createdAt ? ' · last edited ' + fmtTimestamp(t.updatedAt) : ''}
       </div>
       ${reviewLikeHtml(t)}
       <div class="nav">
