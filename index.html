@@ -256,6 +256,7 @@
         {key:'upc', label:'UPC', type:'text', placeholder:'e.g. 825626971400'},
         {key:'catalogNum', label:'Catalog #', type:'text', hint:'Usually the same as UPC.'},
         {key:'label', label:'Record Label', type:'text', default:'12274040 Records DK'},
+        {key:'ytVideo', label:'YouTube Video Made?', type:'select', options:['No','In Progress','Yes'], default:'No'},
       ]},
     { title:'BMI Registration', subtitle:'Track the paperwork once it is filed.',
       fields:[
@@ -394,7 +395,11 @@
     if(status.includes('Submitted') || status==='Delivered' || status==='In Review' || status==='Under Review') return 'foam';
     return 'dim';
   }
-
+function ytBadge(t){
+    if(t.ytVideo==='Yes') return `<span class="badge gold">🎬 Video</span>`;
+    if(t.ytVideo==='In Progress') return `<span class="badge foam">🎬 In progress</span>`;
+    return '';
+}
   // ---------- catalog stats ----------
   function computeStats(){
     const total = tracks.length;
@@ -492,6 +497,7 @@
           <span class="badge ${badgeClass(t.dkStatus)}">${escapeHtml(t.dkStatus||'Not uploaded')}</span>
           <span class="badge ${badgeClass(t.bmiStatus)}">${escapeHtml(t.bmiStatus||'Not yet registered')}</span>
           ${t.bmiWorkNo ? `<span class="badge dim">#${escapeHtml(t.bmiWorkNo)}</span>` : ''}
+          ${ytBadge(t)}
         </div>
         ${(t.isrc||t.upc) ? `<div class="card-codes">${t.isrc?('ISRC '+escapeHtml(t.isrc)):''}${(t.isrc&&t.upc)?' · ':''}${t.upc?('UPC '+escapeHtml(t.upc)):''}</div>` : ''}
       </div>
@@ -506,6 +512,7 @@
         <div class="rt-badges">
           <span class="badge ${badgeClass(t.dkStatus)}">${escapeHtml(t.dkStatus||'Not uploaded')}</span>
           <span class="badge ${badgeClass(t.bmiStatus)}">${escapeHtml(t.bmiStatus||'Not yet registered')}</span>
+          ${ytBadge(t)}
         </div>
         <button class="del-btn" data-del="${t.id}" title="Delete">✕</button>
       </div>
