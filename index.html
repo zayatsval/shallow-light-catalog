@@ -321,6 +321,12 @@
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
+  function fmtDate(v){
+    if(!v) return '';
+    const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(!m) return v;
+    return `${m[2]}/${m[3]}/${m[1]}`;
+  }
   function hasStorage(){ return GAS_URL && GAS_URL.indexOf('PASTE_YOUR') === -1; }
 
   // ---------- persistence (Google Sheets via Apps Script) ----------
@@ -553,7 +559,8 @@
     STEPS.forEach(g=>{
       html += `<div class="review-group"><h4>${g.title}</h4>`;
       g.fields.forEach(f=>{
-        const v = data[f.key];
+        const raw = data[f.key];
+        const v = f.type==='date' ? fmtDate(raw) : raw;
         html += `<div class="review-row"><span class="k">${f.label}</span><span class="v">${v ? escapeHtml(String(v)) : '—'}</span></div>`;
       });
       html += `</div>`;
@@ -638,7 +645,8 @@
     groups.forEach(g=>{
       html += `<div class="review-group"><h4>${g.title}</h4>`;
       g.fields.forEach(f=>{
-        const v = form[f.key];
+        const raw = form[f.key];
+        const v = f.type==='date' ? fmtDate(raw) : raw;
         html += `<div class="review-row"><span class="k">${f.label}</span><span class="v">${v ? escapeHtml(String(v)) : '—'}</span></div>`;
       });
       html += `</div>`;
