@@ -216,12 +216,14 @@
     <div class="tabs">
       <button class="tab" data-tab="catalog">Catalog <span class="tab-count" id="tabCount"></span></button>
       <button class="tab" data-tab="wizard">New Entry</button>
+      <button class="tab" data-tab="drafts">In Progress <span class="tab-count" id="draftsTabCount"></span></button>
       <button class="tab" data-tab="profile">Artist Profile</button>
     </div>
 
     <div id="viewCatalog"></div>
     <div id="viewWizard" style="display:none;"></div>
     <div id="viewDetail" style="display:none;"></div>
+    <div id="viewDrafts" style="display:none;"></div>
     <div id="viewProfile" style="display:none;"></div>
   </div>
 </div>
@@ -305,17 +307,24 @@
 
   let tracks = [];
   let profile = {};
+  let drafts = [];
   let curStep = 0;
   let form = {};
   let editingId = null;
+  let editingDraftId = null;
+  let promotingDraftId = null;
   let catalogViewMode = 'list'; // 'list' (compact) or 'grid' (cards)
   let catalogSortMode = 'newest'; // 'newest' | 'oldest' | 'title'
+
+  const DRAFT_STAGES = ['Idea','Writing / Suno draft','Mixing','Mastering','Ready for release'];
 
   const viewCatalog = document.getElementById('viewCatalog');
   const viewWizard = document.getElementById('viewWizard');
   const viewDetail = document.getElementById('viewDetail');
+  const viewDrafts = document.getElementById('viewDrafts');
   const viewProfile = document.getElementById('viewProfile');
   const tabCount = document.getElementById('tabCount');
+  const draftsTabCount = document.getElementById('draftsTabCount');
   const toastEl = document.getElementById('toast');
 
   function toast(msg, isErr){
@@ -353,14 +362,17 @@
       return;
     }
     try{
-      const [tRes, pRes] = await Promise.all([
+      const [tRes, pRes, dRes] = await Promise.all([
         fetch(GAS_URL + '?action=list&key=' + encodeURIComponent(GAS_KEY)).then(r=>r.json()),
-        fetch(GAS_URL + '?action=profile&key=' + encodeURIComponent(GAS_KEY)).then(r=>r.json())
+        fetch(GAS_URL + '?action=profile&key=' + encodeURIComponent(GAS_KEY)).then(r=>r.json()),
+        fetch(GAS_URL + '?action=listDrafts&key=' + encodeURIComponent(GAS_KEY)).then(r=>r.json())
       ]);
       tracks = Array.isArray(tRes) ? tRes : [];
       profile = pRes || {};
+      drafts = Array.isArray(dRes) ? dRes : [];
     }catch(e){ console.warn('Load failed', e); toast('Could not load from Google Sheets', true); }
     tracks.sort((a,b)=> (b.updatedAt||0) - (a.updatedAt||0));
+    drafts.sort((a,b)=> (b.updatedAt||0) - (a.updatedAt||0));
   }
 
   async function persistTrack(data){
@@ -396,13 +408,37 @@
     }catch(e){ console.warn('Profile persist failed', e); toast('Saved here, but sync to Sheets failed', true); }
   }
 
+  async function persistDraft(data){
+    if(!hasStorage()) return;
+    try{
+      await fetch(GAS_URL, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({action:'saveDraft', data, key: GAS_KEY})
+      });
+    }catch(e){ console.warn('Draft persist failed', e); toast('Saved here, but sync to Sheets failed', true); }
+  }
+
+  async function persistDraftDelete(id){
+    if(!hasStorage()) return;
+    try{
+      await fetch(GAS_URL, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({action:'deleteDraft', id, key: GAS_KEY})
+      });
+    }catch(e){ console.warn('Draft delete-persist failed', e); }
+  }
+
   function setTab(name){
     document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
     viewCatalog.style.display = name==='catalog' ? 'block' : 'none';
     viewWizard.style.display = name==='wizard' ? 'block' : 'none';
     viewDetail.style.display = 'none';
+    viewDrafts.style.display = name==='drafts' ? 'block' : 'none';
     viewProfile.style.display = name==='profile' ? 'block' : 'none';
     if(name==='catalog') renderCatalog();
+    if(name==='drafts') renderDrafts();
     if(name==='profile') renderProfile();
   }
 
@@ -563,6 +599,7 @@
   // ---------- wizard ----------
   function startNew(){
     editingId = null;
+    promotingDraftId = null;
     form = {};
     STEPS.forEach(s => s.fields.forEach(f => { if(f.default!==undefined) form[f.key]=f.default; }));
     curStep = 0;
@@ -737,10 +774,164 @@
       toast(wasEditing ? 'Changes saved' : 'Added to catalog');
       setTab('catalog');
       persistTrack(saved);
+
+      if(promotingDraftId){
+        const pid = promotingDraftId;
+        promotingDraftId = null;
+        drafts = drafts.filter(x=>x.id!==pid);
+        persistDraftDelete(pid);
+      }
     });
   }
 
   // ---------- artist profile ----------
+  // ---------- in-progress drafts ----------
+  function draftStageBadgeClass(stage){
+    if(stage==='Ready for release') return 'gold';
+    if(stage==='Mixing' || stage==='Mastering') return 'foam';
+    return 'dim';
+  }
+
+  function renderDrafts(){
+    draftsTabCount.textContent = drafts.length ? `(${drafts.length})` : '';
+    let listHtml = '';
+    if(drafts.length===0){
+      listHtml = `<div class="empty">
+        <div class="big">Nothing in progress right now.</div>
+        Jot down an idea or a track that's mid-production, so it doesn't slip your mind.
+      </div>`;
+    } else {
+      listHtml = `<div class="rows">` + drafts.map(d => `
+        <div class="rowitem" data-draft="${d.id}">
+          <div class="rt-title">${escapeHtml(d.title||'Untitled idea')}</div>
+          <div class="rt-proj">${escapeHtml(d.project||'—')}</div>
+          <div class="rt-badges">
+            <span class="badge ${draftStageBadgeClass(d.stage)}">${escapeHtml(d.stage||'Idea')}</span>
+          </div>
+          <button class="btn ghost" data-promote="${d.id}" style="padding:6px 12px;font-size:12px;">Promote →</button>
+          <button class="del-btn" data-deldraft="${d.id}" title="Delete">✕</button>
+        </div>
+      `).join('') + `</div>`;
+    }
+
+    viewDrafts.innerHTML = `
+      <div class="step-label">
+        <span class="num">WORKS IN PROGRESS</span>
+        <h2>In Progress</h2>
+        <p>Quick notes for tracks that aren't ready for the full catalog entry yet. Promote one when it's ready to register.</p>
+      </div>
+      <div class="toolbar" style="margin-bottom:22px;">
+        <button class="new-btn" id="newDraftBtn">+ New Idea</button>
+      </div>
+      ${listHtml}
+    `;
+    document.getElementById('newDraftBtn').addEventListener('click', ()=> openDraftForm(null));
+    viewDrafts.querySelectorAll('[data-draft]').forEach(row=>{
+      row.addEventListener('click', (e)=>{
+        if(e.target.closest('[data-deldraft]') || e.target.closest('[data-promote]')) return;
+        openDraftForm(row.dataset.draft);
+      });
+    });
+    viewDrafts.querySelectorAll('[data-promote]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        promoteDraft(btn.dataset.promote);
+      });
+    });
+    viewDrafts.querySelectorAll('[data-deldraft]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const id = btn.dataset.deldraft;
+        const d = drafts.find(x=>x.id===id);
+        if(confirm(`Delete "${d?d.title:'this idea'}"? This can't be undone.`)){
+          drafts = drafts.filter(x=>x.id!==id);
+          renderDrafts();
+          toast('Removed');
+          persistDraftDelete(id);
+        }
+      });
+    });
+  }
+
+  function openDraftForm(id){
+    const existing = id ? drafts.find(x=>x.id===id) : null;
+    editingDraftId = id;
+    const d = existing || { title:'', project:'Shallow Light', stage:'Idea', notes:'' };
+
+    viewDrafts.innerHTML = `
+      <div class="step-label">
+        <span class="num">${id ? 'EDIT IDEA' : 'NEW IDEA'}</span>
+        <h2>${id ? 'Edit In-Progress Track' : 'New In-Progress Track'}</h2>
+        <p>Just enough to remember it exists — full details come later when you promote it.</p>
+      </div>
+      <div class="field">
+        <label>Title <span class="req">*</span></label>
+        <input type="text" id="dTitle" value="${escapeHtml(d.title)}" placeholder="Working title">
+      </div>
+      <div class="field">
+        <label>Project / Direction</label>
+        <select id="dProject">
+          ${['Shallow Light','Valhare (as Shallow Light)','Mia and Mylo','Russian rock-blues (Pepel I)','Other'].map(o=>`<option value="${o}" ${o===d.project?'selected':''}>${o}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label>Stage</label>
+        <select id="dStage">
+          ${DRAFT_STAGES.map(o=>`<option value="${o}" ${o===d.stage?'selected':''}>${o}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label>Notes</label>
+        <textarea id="dNotes" placeholder="Concept, chord ideas, what's left to do…">${escapeHtml(d.notes||'')}</textarea>
+      </div>
+      <div class="nav">
+        <button class="btn ghost" id="draftCancelBtn">Cancel</button>
+        <button class="btn primary" id="draftSaveBtn">${id ? 'Save Changes' : 'Add to In Progress'}</button>
+      </div>
+    `;
+    document.getElementById('draftCancelBtn').addEventListener('click', ()=>{ editingDraftId=null; renderDrafts(); });
+    document.getElementById('draftSaveBtn').addEventListener('click', ()=>{
+      const title = document.getElementById('dTitle').value.trim();
+      if(!title){ toast('Title is required', true); return; }
+      const now = Date.now();
+      const data = {
+        id: id || ('d'+Date.now()+Math.random().toString(36).slice(2,8)),
+        title,
+        project: document.getElementById('dProject').value,
+        stage: document.getElementById('dStage').value,
+        notes: document.getElementById('dNotes').value,
+        createdAt: existing ? existing.createdAt : now,
+        updatedAt: now
+      };
+      if(existing){
+        const idx = drafts.findIndex(x=>x.id===id);
+        if(idx>=0) drafts[idx] = data; else drafts.unshift(data);
+      } else {
+        drafts.unshift(data);
+      }
+      editingDraftId = null;
+      toast(existing ? 'Changes saved' : 'Added to In Progress');
+      renderDrafts();
+      persistDraft(data);
+    });
+  }
+
+  function promoteDraft(id){
+    const d = drafts.find(x=>x.id===id);
+    if(!d) return;
+    promotingDraftId = id;
+    editingId = null;
+    form = {};
+    STEPS.forEach(s => s.fields.forEach(f => { if(f.default!==undefined) form[f.key]=f.default; }));
+    form.title = d.title;
+    form.project = d.project;
+    form.notes = d.notes;
+    curStep = 0;
+    setTab('wizard');
+    renderWizard();
+    toast('Carried over — finish the rest of the details');
+  }
+
   function renderProfile(){
     let html = '';
     PROFILE_SECTIONS.forEach(sec=>{
